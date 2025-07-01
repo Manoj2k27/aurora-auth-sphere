@@ -24,17 +24,7 @@ const userSchema = new mongoose.Schema({
   password: {
     type: String,
     required: [true, 'Password is required'],
-    minlength: [6, 'Password must be at least 6 characters long'],
-    validate: {
-      validator: function(password) {
-        // Only validate if password is being modified
-        if (!this.isModified('password')) return true;
-        
-        // Check for at least one letter and one number
-        return /^(?=.*[A-Za-z])(?=.*\d)/.test(password);
-      },
-      message: 'Password must contain at least one letter and one number'
-    }
+    minlength: [6, 'Password must be at least 6 characters long']
   },
   isActive: {
     type: Boolean,
@@ -66,6 +56,7 @@ userSchema.pre('save', async function(next) {
     this.password = hashedPassword;
     next();
   } catch (error) {
+    console.error('Password hashing error:', error);
     next(error);
   }
 });

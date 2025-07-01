@@ -1,4 +1,3 @@
-
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
@@ -87,7 +86,7 @@ router.post('/register', authLimiter, registerValidation, handleValidationErrors
     console.log('Registration attempt for email:', email);
     
     // Check if user already exists
-    const existingUser = await User.findByEmail(email);
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
       return res.status(400).json({
         success: false,
@@ -96,12 +95,13 @@ router.post('/register', authLimiter, registerValidation, handleValidationErrors
     }
     
     // Create new user
-    const user = new User({
+    const userData = {
       name: name.trim(),
       email: email.toLowerCase(),
       password
-    });
+    };
     
+    const user = new User(userData);
     await user.save();
     
     // Generate token
@@ -130,9 +130,18 @@ router.post('/register', authLimiter, registerValidation, handleValidationErrors
       });
     }
     
+    if (error.name === 'ValidationError') {
+      const validationErrors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: validationErrors
+      });
+    }
+    
     res.status(500).json({
       success: false,
-      message: 'Server error during registration'
+      message: 'Server error during registration. Please try again.'
     });
   }
 });
